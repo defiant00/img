@@ -4,7 +4,6 @@ const img = @import("zigimg");
 const RingBuffer = @import("ring_buffer.zig").RingBuffer;
 
 // zig build run -- c:\git\test_images\
-// https://qoiformat.org/
 
 pub fn main() !void {
     std.debug.print("Image Encoding Test 0.0.1\n", .{});
@@ -39,134 +38,185 @@ pub fn main() !void {
                 const unc_channel = image.width * image.height * 8;
                 const uncompressed = unc_channel * 4;
 
-                var c1_r = C1(1, 9, 1){};
-                var c1_g = C1(1, 9, 1){};
-                var c1_b = C1(1, 9, 1){};
-                var c1_a = C1(1, 9, 1){};
-
-                var c2_r = C1(2, 9, 2){};
-                var c2_g = C1(2, 9, 2){};
-                var c2_b = C1(2, 9, 2){};
-                var c2_a = C1(2, 9, 2){};
-
-                var c3_r = C1(4, 9, 3){};
-                var c3_g = C1(4, 9, 3){};
-                var c3_b = C1(4, 9, 3){};
-                var c3_a = C1(4, 9, 3){};
-
-                var c4_r = C1(8, 9, 4){};
-                var c4_g = C1(8, 9, 4){};
-                var c4_b = C1(8, 9, 4){};
-                var c4_a = C1(8, 9, 4){};
-
-                var c5_r = C1(16, 9, 5){};
-                var c5_g = C1(16, 9, 5){};
-                var c5_b = C1(16, 9, 5){};
-                var c5_a = C1(16, 9, 5){};
-
-                var c6_r = C1(32, 9, 6){};
-                var c6_g = C1(32, 9, 6){};
-                var c6_b = C1(32, 9, 6){};
-                var c6_a = C1(32, 9, 6){};
+                var c1 = C1(u1, u1){};
+                var c2 = C1(u1, u2){};
+                var c3 = C1(u1, u3){};
+                var c4 = C1(u1, u4){};
+                var c5 = C1(u1, u5){};
+                var c6 = C1(u1, u6){};
+                var c7 = C2(u2, u4, u3){};
+                var c8 = C2(u2, u4, u4){};
+                var c9 = C2(u2, u4, u5){};
+                var c10 = C2(u2, u4, u6){};
+                var c11 = C2(u2, u4, u7){};
+                var c12 = C2(u2, u4, u8){};
 
                 var ci = image.iterator();
                 while (ci.next()) |color| {
                     const c = color.toRgba32();
-
-                    c1_r.add(c.r);
-                    c1_g.add(c.g);
-                    c1_b.add(c.b);
-                    c1_a.add(c.a);
-
-                    c2_r.add(c.r);
-                    c2_g.add(c.g);
-                    c2_b.add(c.b);
-                    c2_a.add(c.a);
-
-                    c3_r.add(c.r);
-                    c3_g.add(c.g);
-                    c3_b.add(c.b);
-                    c3_a.add(c.a);
-
-                    c4_r.add(c.r);
-                    c4_g.add(c.g);
-                    c4_b.add(c.b);
-                    c4_a.add(c.a);
-
-                    c5_r.add(c.r);
-                    c5_g.add(c.g);
-                    c5_b.add(c.b);
-                    c5_a.add(c.a);
-
-                    c6_r.add(c.r);
-                    c6_g.add(c.g);
-                    c6_b.add(c.b);
-                    c6_a.add(c.a);
+                    c1.add(c.r, c.g, c.b, c.a);
+                    c2.add(c.r, c.g, c.b, c.a);
+                    c3.add(c.r, c.g, c.b, c.a);
+                    c4.add(c.r, c.g, c.b, c.a);
+                    c5.add(c.r, c.g, c.b, c.a);
+                    c6.add(c.r, c.g, c.b, c.a);
+                    c7.add(c.r, c.g, c.b, c.a);
+                    c8.add(c.r, c.g, c.b, c.a);
+                    c9.add(c.r, c.g, c.b, c.a);
+                    c10.add(c.r, c.g, c.b, c.a);
+                    c11.add(c.r, c.g, c.b, c.a);
+                    c12.add(c.r, c.g, c.b, c.a);
                 }
 
-                std.debug.print("      un: {d}\n", .{uncompressed});
-                std.debug.print("      c1: {d}\n", .{c1_r.size() + c1_g.size() + c1_b.size() + c1_a.size()});
-                std.debug.print("      c2: {d}\n", .{c2_r.size() + c2_g.size() + c2_b.size() + c2_a.size()});
-                std.debug.print("      c3: {d}\n", .{c3_r.size() + c3_g.size() + c3_b.size() + c3_a.size()});
-                std.debug.print("      c4: {d}\n", .{c4_r.size() + c4_g.size() + c4_b.size() + c4_a.size()});
-                std.debug.print("      c5: {d}\n", .{c5_r.size() + c5_g.size() + c5_b.size() + c5_a.size()});
-                std.debug.print("      c6: {d}\n", .{c6_r.size() + c6_g.size() + c6_b.size() + c6_a.size()});
-                std.debug.print("      r\n", .{});
-                std.debug.print("        un: {d}\n", .{unc_channel});
-                std.debug.print("        c1: {d}\n", .{c1_r.size()});
-                std.debug.print("        c2: {d}\n", .{c2_r.size()});
-                std.debug.print("        c3: {d}\n", .{c3_r.size()});
-                std.debug.print("        c4: {d}\n", .{c4_r.size()});
-                std.debug.print("        c5: {d}\n", .{c5_r.size()});
-                std.debug.print("        c6: {d}\n", .{c6_r.size()});
-                std.debug.print("      g\n", .{});
-                std.debug.print("        un: {d}\n", .{unc_channel});
-                std.debug.print("        c1: {d}\n", .{c1_g.size()});
-                std.debug.print("        c2: {d}\n", .{c2_g.size()});
-                std.debug.print("        c3: {d}\n", .{c3_g.size()});
-                std.debug.print("        c4: {d}\n", .{c4_g.size()});
-                std.debug.print("        c5: {d}\n", .{c5_g.size()});
-                std.debug.print("        c6: {d}\n", .{c6_g.size()});
-                std.debug.print("      b\n", .{});
-                std.debug.print("        un: {d}\n", .{unc_channel});
-                std.debug.print("        c1: {d}\n", .{c1_b.size()});
-                std.debug.print("        c2: {d}\n", .{c2_b.size()});
-                std.debug.print("        c3: {d}\n", .{c3_b.size()});
-                std.debug.print("        c4: {d}\n", .{c4_b.size()});
-                std.debug.print("        c5: {d}\n", .{c5_b.size()});
-                std.debug.print("        c6: {d}\n", .{c6_b.size()});
-                std.debug.print("      a\n", .{});
-                std.debug.print("        un: {d}\n", .{unc_channel});
-                std.debug.print("        c1: {d}\n", .{c1_a.size()});
-                std.debug.print("        c2: {d}\n", .{c2_a.size()});
-                std.debug.print("        c3: {d}\n", .{c3_a.size()});
-                std.debug.print("        c4: {d}\n", .{c4_a.size()});
-                std.debug.print("        c5: {d}\n", .{c5_a.size()});
-                std.debug.print("        c6: {d}\n", .{c6_a.size()});
+                std.debug.print("       un: {d}\n", .{uncompressed});
+                c1.print(" c1");
+                c2.print(" c2");
+                c3.print(" c3");
+                c4.print(" c4");
+                c5.print(" c5");
+                c6.print(" c6");
+                c7.print(" c7");
+                c8.print(" c8");
+                c9.print(" c9");
+                c10.print("c10");
+                c11.print("c11");
+                c12.print("c12");
             }
         }
     }
 }
 
-fn C1(comptime buf_size: usize, comptime full_size: usize, comptime indexed_size: usize) type {
+fn C1(comptime op_t: type, comptime index_t: type) type {
     return struct {
         const Self = @This();
+        const Channel = C1Channel(op_t, index_t);
+
+        r: Channel = Channel{},
+        g: Channel = Channel{},
+        b: Channel = Channel{},
+        a: Channel = Channel{},
+
+        fn add(self: *Self, rv: u8, gv: u8, bv: u8, av: u8) void {
+            self.r.add(rv);
+            self.g.add(gv);
+            self.b.add(bv);
+            self.a.add(av);
+        }
+
+        fn print(self: *Self, label: []const u8) void {
+            const total_size = self.r.size() + self.g.size() + self.b.size() + self.a.size();
+            const total_full = self.r.full + self.g.full + self.b.full + self.a.full;
+            const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed + self.a.indexed;
+            std.debug.print("      {s}: {d} ({d}, {d})\n", .{ label, total_size, total_full, total_indexed });
+        }
+    };
+}
+
+fn C1Channel(comptime op_t: type, comptime index_t: type) type {
+    return struct {
+        const Self = @This();
+        const op_bits = @bitSizeOf(op_t);
+        const index_bits = @bitSizeOf(index_t);
+        const buf_size = std.math.maxInt(index_t) + 1;
 
         full: usize = 0,
         indexed: usize = 0,
         buf: RingBuffer(u8, buf_size) = RingBuffer(u8, buf_size){},
 
-        pub fn size(self: *Self) usize {
-            return self.full * full_size + self.indexed * indexed_size;
-        }
-
-        pub fn add(self: *Self, val: u8) void {
+        fn add(self: *Self, val: u8) void {
             if (self.buf.indexOf(val)) |_| {
                 self.indexed += 1;
             } else {
                 self.full += 1;
                 self.buf.add(val);
             }
+        }
+
+        fn size(self: *Self) usize {
+            return self.full * (op_bits + 8) + self.indexed * (op_bits + index_bits);
+        }
+    };
+}
+
+fn C2(comptime op_t: type, comptime index_t: type, comptime rep_t: type) type {
+    return struct {
+        const Self = @This();
+        const Channel = C2Channel(op_t, index_t, rep_t);
+
+        r: Channel = Channel{},
+        g: Channel = Channel{},
+        b: Channel = Channel{},
+        a: Channel = Channel{},
+
+        fn add(self: *Self, rv: u8, gv: u8, bv: u8, av: u8) void {
+            self.r.add(rv);
+            self.g.add(gv);
+            self.b.add(bv);
+            self.a.add(av);
+        }
+
+        fn print(self: *Self, label: []const u8) void {
+            self.r.finish();
+            self.g.finish();
+            self.b.finish();
+            self.a.finish();
+
+            const total_size = self.r.size() + self.g.size() + self.b.size() + self.a.size();
+            const total_full = self.r.full + self.g.full + self.b.full + self.a.full;
+            const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed + self.a.indexed;
+            const total_rep = self.r.repeat + self.g.repeat + self.b.repeat + self.a.repeat;
+            std.debug.print("      {s}: {d} ({d}, {d}, {d})\n", .{ label, total_size, total_full, total_indexed, total_rep });
+        }
+    };
+}
+
+fn C2Channel(comptime op_t: type, comptime index_t: type, comptime rep_t: type) type {
+    return struct {
+        const Self = @This();
+        const op_bits = @bitSizeOf(op_t);
+        const index_bits = @bitSizeOf(index_t);
+        const buf_size = std.math.maxInt(index_t) + 1;
+        const rep_bits = @bitSizeOf(rep_t);
+        const max_rep = std.math.maxInt(rep_t);
+
+        prior: u8 = 0,
+        cur_rep: rep_t = 0,
+        full: usize = 0,
+        indexed: usize = 0,
+        repeat: usize = 0,
+        buf: RingBuffer(u8, buf_size) = RingBuffer(u8, buf_size){},
+
+        fn add(self: *Self, val: u8) void {
+            if (self.prior == val) {
+                self.cur_rep += 1;
+                if (self.cur_rep == max_rep) {
+                    self.repeat += 1;
+                    self.cur_rep = 0;
+                }
+            } else {
+                self.prior = val;
+                if (self.cur_rep > 0) {
+                    self.repeat += 1;
+                    self.cur_rep = 0;
+                }
+                if (self.buf.indexOf(val)) |_| {
+                    self.indexed += 1;
+                } else {
+                    self.full += 1;
+                    self.buf.add(val);
+                }
+            }
+        }
+
+        fn finish(self: *Self) void {
+            if (self.cur_rep > 0) {
+                self.cur_rep = 0;
+                self.repeat += 1;
+            }
+        }
+
+        fn size(self: *Self) usize {
+            return self.full * (op_bits + 8) + self.indexed * (op_bits + index_bits) + self.repeat * (op_bits + rep_bits);
         }
     };
 }
