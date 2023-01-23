@@ -17,6 +17,7 @@ pub fn main() !void {
     _ = args.next(); // skip program name
 
     const png = ".png";
+    const qoi = ".qoi";
     // const ext = ".zimg";
     var buf: [1024]u8 = undefined;
 
@@ -32,8 +33,22 @@ pub fn main() !void {
                 // load image
                 std.mem.copy(u8, buf[0..], path);
                 std.mem.copy(u8, buf[path.len..], entry.name);
-                var image = try img.Image.fromFilePath(allocator, buf[0 .. path.len + entry.name.len]);
+                const png_path = buf[0 .. path.len + entry.name.len];
+                const png_file = try std.fs.openFileAbsolute(png_path, .{});
+                defer png_file.close();
+                const png_size = (try png_file.stat()).size * 8;
+                var image = try img.Image.fromFilePath(allocator, png_path);
                 defer image.deinit();
+
+                // get qoi size
+                const no_ext_len = entry.name.len - png.len;
+                std.mem.copy(u8, buf[0..], path);
+                std.mem.copy(u8, buf[path.len..], entry.name[0..no_ext_len]);
+                std.mem.copy(u8, buf[path.len + no_ext_len ..], qoi);
+                const qoi_path = buf[0 .. path.len + no_ext_len + qoi.len];
+                const qoi_file = try std.fs.openFileAbsolute(qoi_path, .{});
+                defer qoi_file.close();
+                const qoi_size = (try qoi_file.stat()).size * 8;
 
                 const unc_channel = image.width * image.height * 8;
                 const uncompressed = unc_channel * 4;
@@ -69,6 +84,8 @@ pub fn main() !void {
                 }
 
                 std.debug.print("       un: {d}\n", .{uncompressed});
+                std.debug.print("      png: {d}\n", .{png_size});
+                std.debug.print("      qoi: {d}\n", .{qoi_size});
                 c1.print(" c1");
                 c2.print(" c2");
                 c3.print(" c3");
