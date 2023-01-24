@@ -10,4 +10,4 @@ C2 | full, recent index, repeat last
 ## TODO
 * VLE for repeat
 * repeat multi (eg, [1, 2, 3]) if it can be encoded easily
-* diff from previous value
+* wraparound diff
