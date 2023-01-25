@@ -20,7 +20,7 @@ pub fn main() !void {
     const qoi = ".qoi";
     // const ext = ".zimg";
     var buf: [1024]u8 = undefined;
-    var counts: [16]usize = [_]usize{0} ** 16;
+    var counts: [256]usize = [_]usize{0} ** 256;
 
     while (args.next()) |path| {
         std.debug.print("  {s}\n", .{path});
@@ -54,22 +54,27 @@ pub fn main() !void {
                 const unc_channel = image.width * image.height * 8;
                 const uncompressed = unc_channel * 4;
 
-                var c1 = C1(u1, u1){};
-                var c2 = C1(u1, u2){};
-                var c3 = C1(u1, u3){};
-                var c4 = C1(u1, u4){};
-                var c5 = C1(u1, u5){};
-                var c6 = C1(u1, u6){};
-                var c7 = C2(u2, u4, u3, i3){};
-                var c8 = C2(u2, u4, u4, i3){};
-                var c9 = C2(u2, u4, u5, i3){};
-                var c10 = C2(u2, u4, u6, i3){};
-                var c11 = C2(u2, u4, u7, i3){};
-                var c12 = C2(u2, u4, u8, i3){};
-                var c13 = C2(u2, u4, u5, i4){};
-                var c14 = C2(u2, u4, u5, i5){};
-                var c15 = C2(u2, u4, u5, i6){};
-                var c16 = C2(u2, u4, u5, i7){};
+                var c1 = C2(u2, u4, u3, i3){};
+                var c2 = C2(u2, u4, u4, i3){};
+                var c3 = C2(u2, u4, u5, i3){};
+                var c4 = C2(u2, u4, u6, i3){};
+                var c5 = C2(u2, u4, u7, i3){};
+
+                var c6 = C2(u2, u4, u3, i4){};
+                var c7 = C2(u2, u4, u4, i4){};
+                var c8 = C2(u2, u4, u5, i4){};
+                var c9 = C2(u2, u4, u6, i4){};
+                var c10 = C2(u2, u4, u7, i4){};
+
+                var c11 = C2(u2, u4, u3, i5){};
+                var c12 = C2(u2, u4, u4, i5){};
+                var c13 = C2(u2, u4, u5, i5){};
+                var c14 = C2(u2, u4, u6, i5){};
+                var c15 = C2(u2, u4, u7, i5){};
+
+                var c16 = C3(u2, u4, i3){};
+                var c17 = C3(u2, u4, i4){};
+                var c18 = C3(u2, u4, i5){};
 
                 var ci = image.iterator();
                 while (ci.next()) |color| {
@@ -90,6 +95,8 @@ pub fn main() !void {
                     c14.add(c.r, c.g, c.b, c.a);
                     c15.add(c.r, c.g, c.b, c.a);
                     c16.add(c.r, c.g, c.b, c.a);
+                    c17.add(c.r, c.g, c.b, c.a);
+                    c18.add(c.r, c.g, c.b, c.a);
                 }
 
                 std.debug.print("       un: {d}\n", .{uncompressed});
@@ -107,11 +114,12 @@ pub fn main() !void {
                 c10.print("c10");
                 c11.print("c11");
                 c12.print("c12");
-                c9.print(" c9");
                 c13.print("c13");
                 c14.print("c14");
                 c15.print("c15");
                 c16.print("c16");
+                c17.print("c17");
+                c18.print("c18");
 
                 const sizes = [_]usize{
                     c1.size(),
@@ -130,6 +138,8 @@ pub fn main() !void {
                     c14.size(),
                     c15.size(),
                     c16.size(),
+                    c17.size(),
+                    c18.size(),
                 };
 
                 var min: usize = std.math.maxInt(usize);
@@ -147,63 +157,8 @@ pub fn main() !void {
 
     std.debug.print("Counts:\n", .{});
     for (counts) |c, i| {
-        std.debug.print("  c{d:0>2}: {d}\n", .{ i + 1, c });
+        if (c > 0) std.debug.print("  c{d}: {d}\n", .{ i + 1, c });
     }
-}
-
-fn C1(comptime op_t: type, comptime index_t: type) type {
-    return struct {
-        const Self = @This();
-        const Channel = C1Channel(op_t, index_t);
-
-        r: Channel = Channel{},
-        g: Channel = Channel{},
-        b: Channel = Channel{},
-        a: Channel = Channel{},
-
-        fn add(self: *Self, rv: u8, gv: u8, bv: u8, av: u8) void {
-            self.r.add(rv);
-            self.g.add(gv);
-            self.b.add(bv);
-            self.a.add(av);
-        }
-
-        fn print(self: *Self, label: []const u8) void {
-            const total_full = self.r.full + self.g.full + self.b.full + self.a.full;
-            const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed + self.a.indexed;
-            std.debug.print("      {s}: {d} ({d}, {d})\n", .{ label, self.size(), total_full, total_indexed });
-        }
-
-        fn size(self: *Self) usize {
-            return self.r.size() + self.g.size() + self.b.size() + self.a.size();
-        }
-    };
-}
-
-fn C1Channel(comptime op_t: type, comptime index_t: type) type {
-    return struct {
-        const Self = @This();
-        const op_bits = @bitSizeOf(op_t);
-        const index_bits = @bitSizeOf(index_t);
-        const buf_size = std.math.maxInt(index_t) + 1;
-
-        full: usize = 0,
-        indexed: usize = 0,
-        buf: RingBuffer(u8, buf_size) = RingBuffer(u8, buf_size){},
-
-        fn add(self: *Self, val: u8) void {
-            if (self.buf.indexOf(val)) |_| {
-                self.indexed += 1;
-            } else {
-                self.full += 1;
-                self.buf.add(val);
-            }
-        }
-
-        fn size(self: *Self) usize {
-            return self.full * (op_bits + 8) + self.indexed * (op_bits + index_bits);
-        }
-    };
 }
 
 fn C2(comptime op_t: type, comptime index_t: type, comptime rep_t: type, comptime diff_t: type) type {
@@ -215,12 +170,14 @@ fn C2(comptime op_t: type, comptime index_t: type, comptime rep_t: type, comptim
         g: Channel = Channel{},
         b: Channel = Channel{},
         a: Channel = Channel{},
+        has_alpha: bool = false,
 
         fn add(self: *Self, rv: u8, gv: u8, bv: u8, av: u8) void {
             self.r.add(rv);
             self.g.add(gv);
             self.b.add(bv);
             self.a.add(av);
+            if (av != 255) self.has_alpha = true;
         }
 
         fn print(self: *Self, label: []const u8) void {
@@ -229,15 +186,25 @@ fn C2(comptime op_t: type, comptime index_t: type, comptime rep_t: type, comptim
             self.b.finish();
             self.a.finish();
 
-            const total_full = self.r.full + self.g.full + self.b.full + self.a.full;
-            const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed + self.a.indexed;
-            const total_rep = self.r.repeat + self.g.repeat + self.b.repeat + self.a.repeat;
-            const total_diff = self.r.diff + self.g.diff + self.b.diff + self.a.diff;
-            std.debug.print("      {s}: {d} ({d}, {d}, {d}, {d})\n", .{ label, self.size(), total_full, total_indexed, total_rep, total_diff });
+            if (self.has_alpha) {
+                const total_full = self.r.full + self.g.full + self.b.full + self.a.full;
+                const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed + self.a.indexed;
+                const total_rep = self.r.repeat + self.g.repeat + self.b.repeat + self.a.repeat;
+                const total_diff = self.r.diff + self.g.diff + self.b.diff + self.a.diff;
+                std.debug.print("      {s}: {d} (full {d}, idx {d}, rep {d}, diff {d}) rgba\n", .{ label, self.size(), total_full, total_indexed, total_rep, total_diff });
+            } else {
+                const total_full = self.r.full + self.g.full + self.b.full;
+                const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed;
+                const total_rep = self.r.repeat + self.g.repeat + self.b.repeat;
+                const total_diff = self.r.diff + self.g.diff + self.b.diff;
+                std.debug.print("      {s}: {d} (full {d}, idx {d}, rep {d}, diff {d}) rgba\n", .{ label, self.size(), total_full, total_indexed, total_rep, total_diff });
+            }
         }
 
         fn size(self: *Self) usize {
-            return self.r.size() + self.g.size() + self.b.size() + self.a.size();
+            var s = self.r.size() + self.g.size() + self.b.size();
+            if (self.has_alpha) s += self.a.size();
+            return s;
         }
     };
 }
@@ -274,14 +241,23 @@ fn C2Channel(comptime op_t: type, comptime index_t: type, comptime rep_t: type, 
                 }
                 if (self.buf.indexOf(val)) |_| {
                     self.indexed += 1;
-                } else if ((@as(isize, val) - self.prior >= std.math.minInt(diff_t)) and (@as(isize, val) - self.prior <= std.math.maxInt(diff_t))) {
-                    self.diff += 1;
                 } else {
-                    self.full += 1;
+                    const dist = distWithWrap(self.prior, val);
+                    if ((dist >= std.math.minInt(diff_t)) and (dist <= std.math.maxInt(diff_t))) {
+                        self.diff += 1;
+                    } else {
+                        self.full += 1;
+                    }
                     self.buf.add(val);
                 }
                 self.prior = val;
             }
+        }
+
+        fn distWithWrap(prior: u8, cur: u8) isize {
+            const forward = cur -% prior;
+            const back = prior -% cur;
+            return if (forward < back) forward else -@as(isize, back);
         }
 
         fn finish(self: *Self) void {
@@ -293,6 +269,134 @@ fn C2Channel(comptime op_t: type, comptime index_t: type, comptime rep_t: type, 
 
         fn size(self: *Self) usize {
             return self.full * (op_bits + 8) + self.indexed * (op_bits + index_bits) + self.repeat * (op_bits + rep_bits) + self.diff * (op_bits + diff_bits);
+        }
+    };
+}
+
+fn C3(comptime op_t: type, comptime index_t: type, comptime diff_t: type) type {
+    return struct {
+        const Self = @This();
+        const Channel = C3Channel(op_t, index_t, diff_t);
+
+        r: Channel = Channel{},
+        g: Channel = Channel{},
+        b: Channel = Channel{},
+        a: Channel = Channel{},
+        has_alpha: bool = false,
+
+        fn add(self: *Self, rv: u8, gv: u8, bv: u8, av: u8) void {
+            self.r.add(rv);
+            self.g.add(gv);
+            self.b.add(bv);
+            self.a.add(av);
+            if (av != 255) self.has_alpha = true;
+        }
+
+        fn print(self: *Self, label: []const u8) void {
+            self.r.finish();
+            self.g.finish();
+            self.b.finish();
+            self.a.finish();
+
+            if (self.has_alpha) {
+                const total_full = self.r.full + self.g.full + self.b.full + self.a.full;
+                const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed + self.a.indexed;
+                const total_rep = self.r.repeat + self.g.repeat + self.b.repeat + self.a.repeat;
+                const total_diff = self.r.diff + self.g.diff + self.b.diff + self.a.diff;
+                std.debug.print("      {s}: {d} (full {d}, idx {d}, rep {d}, diff {d}) rgba\n", .{ label, self.size(), total_full, total_indexed, total_rep, total_diff });
+            } else {
+                const total_full = self.r.full + self.g.full + self.b.full;
+                const total_indexed = self.r.indexed + self.g.indexed + self.b.indexed;
+                const total_rep = self.r.repeat + self.g.repeat + self.b.repeat;
+                const total_diff = self.r.diff + self.g.diff + self.b.diff;
+                std.debug.print("      {s}: {d} (full {d}, idx {d}, rep {d}, diff {d}) rgba\n", .{ label, self.size(), total_full, total_indexed, total_rep, total_diff });
+            }
+        }
+
+        fn size(self: *Self) usize {
+            var s = self.r.size() + self.g.size() + self.b.size();
+            if (self.has_alpha) s += self.a.size();
+            return s;
+        }
+    };
+}
+
+fn C3Channel(comptime op_t: type, comptime index_t: type, comptime diff_t: type) type {
+    return struct {
+        const Self = @This();
+        const op_bits = @bitSizeOf(op_t);
+        const index_bits = @bitSizeOf(index_t);
+        const buf_size = std.math.maxInt(index_t) + 1;
+        const max_rep = std.math.maxInt(u25);
+        const diff_bits = @bitSizeOf(diff_t);
+
+        prior: u8 = 0,
+        cur_rep: u25 = 0,
+        full: usize = 0,
+        indexed: usize = 0,
+        repeat: usize = 0,
+        repeat_bits: usize = 0,
+        diff: usize = 0,
+        buf: RingBuffer(u8, buf_size) = RingBuffer(u8, buf_size){},
+
+        fn add(self: *Self, val: u8) void {
+            if (self.prior == val) {
+                self.cur_rep += 1;
+                if (self.cur_rep == max_rep) {
+                    self.addRepeat();
+                }
+            } else {
+                if (self.cur_rep > 0) {
+                    self.addRepeat();
+                }
+                if (self.buf.indexOf(val)) |_| {
+                    self.indexed += 1;
+                } else {
+                    const dist = distWithWrap(self.prior, val);
+                    if ((dist >= std.math.minInt(diff_t)) and (dist <= std.math.maxInt(diff_t))) {
+                        self.diff += 1;
+                    } else {
+                        self.full += 1;
+                    }
+                    self.buf.add(val);
+                }
+                self.prior = val;
+            }
+        }
+
+        // msb indicates continuation, size in bits per part: 4 8 8 8
+        fn addRepeat(self: *Self) void {
+            self.repeat += 1;
+            if (self.cur_rep > std.math.maxInt(u17)) {
+                self.repeat_bits += 28;
+            } else if (self.cur_rep > std.math.maxInt(u10)) {
+                self.repeat_bits += 20;
+            } else if (self.cur_rep > std.math.maxInt(u3)) {
+                self.repeat_bits += 12;
+            } else {
+                self.repeat_bits += 4;
+            }
+            self.cur_rep = 0;
+        }
+
+        fn distWithWrap(prior: u8, cur: u8) isize {
+            const forward = cur -% prior;
+            const back = prior -% cur;
+            return if (forward < back) forward else -@as(isize, back);
+        }
+
+        fn finish(self: *Self) void {
+            if (self.cur_rep > 0) {
+                self.addRepeat();
+            }
+        }
+
+        fn size(self: *Self) usize {
+            return self.full * (op_bits + 8) +
+                self.indexed * (op_bits + index_bits) +
+                self.repeat * op_bits +
+                self.repeat_bits +
+                self.diff * (op_bits + diff_bits);
         }
     };
 }
